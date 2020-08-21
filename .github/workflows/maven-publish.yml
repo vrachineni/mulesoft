@@ -23,7 +23,7 @@ jobs:
     - name: Setup Maven
       uses: stCarolas/setup-maven@v1
       with:
-       maven-version: 3.1.6
+       maven-version: 3.5.4
     - name: Build with Maven
       run: mvn clean deploy -DmuleDeploy
 
