@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:audit-logger="http://www.mulesoft.org/schema/mule/audit-logger"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/audit-logger http://www.mulesoft.org/schema/mule/audit-logger/current/mule-audit-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="10b01711-eb64-4b42-85d3-0cdb1a9a88fe" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="fa77c5ef-a803-44cc-869a-904c29556235" basePath="/services">
+		<http:request-connection protocol="HTTPS" host="prd-p-mib26.splunkcloud.com" port="8088" >
+			<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
+	<flow name="test-cienaFlow" doc:id="70de8dd5-5591-46da-95ad-398e6e7290f3" >
+		<http:listener doc:name="Listener" doc:id="b0638334-89f2-4596-9eda-8c50711a2c56" config-ref="HTTP_Listener_config" path="/test"/>
+		<ee:transform doc:name="Transform Message" doc:id="6f172948-e3f9-4a0a-82cb-e4cadb11aa2e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	flowName: "testFlow",
+	appName: app.name,
+	uuid: uuid()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="2347604d-d5dc-473b-9900-50c083df9365">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "sourcetype": "json",
+  "event": payload,
+  "source": "mulesoft"
+  //"time": 1597997166208
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="4c4f3c61-1c2a-4888-9c61-c602515ba49f" config-ref="HTTP_Request_configuration" path="/collector">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Splunk 82c7c9b4-ffc0-4dd7-973f-ccd4664a98b6"
+}]]]></http:headers>
+		</http:request>
+	</flow>
+</mule>
